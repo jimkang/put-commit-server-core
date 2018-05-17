@@ -1,4 +1,5 @@
 .DS_Store
 node_modules
 config.js
+config.mk
 tests/test-git-dir

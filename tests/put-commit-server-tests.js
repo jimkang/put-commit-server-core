@@ -9,6 +9,8 @@ const testGitDir = __dirname + '/test-git-dir';
 const testFile = 'test-file.txt';
 const initialContents = 'Hey, this is a new file.';
 const port = 6666;
+
+const serverHost = process.env.SERVER || 'localhost';
 var server;
 
 // WARNING: Must be run via the make file in order to set up
@@ -35,7 +37,7 @@ function runTests(error) {
   function newFileTest(t) {
     var reqOpts = {
       method: 'PUT',
-      url: `http://localhost:${port}/file?filename=${
+      url: `http://${serverHost}:${port}/file?filename=${
         testFile
       }&name=Dr.+Wily&email=wily@smallcatlabs.com`,
       body: initialContents

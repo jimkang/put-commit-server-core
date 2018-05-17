@@ -6,11 +6,17 @@ var PutCommitServer = require('./put-commit-server');
 var logFormat = require('log-format');
 const port = 6666;
 
-PutCommitServer({ gitDir: process.env.GITDIR }, useServer);
+PutCommitServer(
+  {
+    gitDir:
+      process.env.GITDIR || '/usr/share/nginx/html/smidgeo.com/story-beat-data'
+  },
+  useServer
+);
 
 function useServer(error, server) {
   if (error) {
-    process.stderr.write(error);
+    process.stderr.write(logFormat(error.message, error.stack));
     process.exit(1);
     return;
   }
@@ -19,7 +25,7 @@ function useServer(error, server) {
 
   function onReady(error) {
     if (error) {
-      process.stderr.write(error);
+      process.stderr.write(logFormat(error.message, error.stack));
     } else {
       process.stdout.write(logFormat(server.name, 'listening at', server.url));
     }
