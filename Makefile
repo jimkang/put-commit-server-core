@@ -41,5 +41,10 @@ prettier:
 
 test:
 	rm -rf $(TESTGITDIR)
-	mkdir -p $(TESTGITDIR) && cd $(TESTGITDIR) && git init
+	mkdir -p $(TESTGITDIR) && \
+	  cd $(TESTGITDIR) && \
+	  touch index.txt && \
+	  git init && \
+	  git add . && \
+	  git commit -a -m"Initial commit."
 	node tests/put-commit-server-tests.js

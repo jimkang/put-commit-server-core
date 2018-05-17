@@ -1,4 +1,4 @@
-/* global __dirname */
+/* global __dirname, process */
 var test = require('tape');
 var assertNoError = require('assert-no-error');
 var fs = require('fs');
@@ -13,12 +13,12 @@ var server;
 
 // WARNING: Must be run via the make file in order to set up
 // the test git repo beforehand.
-
 PutCommitServer({ gitDir: testGitDir }, startServer);
 
 function startServer(error, theServer) {
   if (error) {
-    throw error;
+    console.log('Error creating server:', error);
+    process.exit();
   }
   server = theServer;
   server.listen(port, runTests);
@@ -26,7 +26,8 @@ function startServer(error, theServer) {
 
 function runTests(error) {
   if (error) {
-    throw error;
+    console.log('Error starting server:', error);
+    process.exit();
   }
   test('Put new file', newFileTest);
   test('Close server', closeServer);
@@ -34,22 +35,29 @@ function runTests(error) {
   function newFileTest(t) {
     var reqOpts = {
       method: 'PUT',
-      url: `http://localhost:${port}/file?filename=${testFile}`,
+      url: `http://localhost:${port}/file?filename=${
+        testFile
+      }&name=Dr.+Wily&email=wily@smallcatlabs.com`,
       body: initialContents
     };
     request(reqOpts, checkResponse);
 
-    function checkResponse(error, res) {
+    function checkResponse(error, res, body) {
       assertNoError(t.ok, error, 'No error while making new file request.');
       t.equal(res.statusCode, 200, 'Correct status code is returned.');
+      if (res.statusCode !== 200) {
+        console.log('body:', body);
+      }
       // t.ok(fs.existsSync(testGitDir + '/.git'), '.git dir exists.');
-      var fileContents = fs.readFileSync(testGitDir + '/' + testFile);
+      var fileContents = fs.readFileSync(testGitDir + '/' + testFile, {
+        encoding: 'utf8'
+      });
       t.equal(fileContents, initialContents, 'Committed content is correct.');
       t.end();
     }
   }
 
   function closeServer(t) {
-    t.end(server.close);
+    server.close(t.end);
   }
 }
