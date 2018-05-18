@@ -11,11 +11,14 @@ const initialContents = 'Hey, this is a new file.';
 const port = 6666;
 
 const serverHost = process.env.SERVER || 'localhost';
+
+const testSecret = 'secret';
+
 var server;
 
 // WARNING: Must be run via the make file in order to set up
 // the test git repo beforehand.
-PutCommitServer({ gitDir: testGitDir }, startServer);
+PutCommitServer({ gitDir: testGitDir, secret: testSecret }, startServer);
 
 function startServer(error, theServer) {
   if (error) {
@@ -31,18 +34,12 @@ function runTests(error) {
     console.log('Error starting server:', error);
     process.exit();
   }
+  test('Put new file with bad secret', badSecretTest);
   test('Put new file', newFileTest);
   test('Close server', closeServer);
 
   function newFileTest(t) {
-    var reqOpts = {
-      method: 'PUT',
-      url: `http://${serverHost}:${port}/file?filename=${
-        testFile
-      }&name=Dr.+Wily&email=wily@smallcatlabs.com`,
-      body: initialContents
-    };
-    request(reqOpts, checkResponse);
+    request(getReqOpts(testSecret), checkResponse);
 
     function checkResponse(error, res, body) {
       assertNoError(t.ok, error, 'No error while making new file request.');
@@ -59,7 +56,30 @@ function runTests(error) {
     }
   }
 
+  function badSecretTest(t) {
+    request(getReqOpts('bad secret'), checkResponse);
+
+    function checkResponse(error, res) {
+      assertNoError(t.ok, error, 'No error while making new file request.');
+      t.equal(res.statusCode, 401, 'Unauthorized status code is returned.');
+      t.end();
+    }
+  }
+
   function closeServer(t) {
     server.close(t.end);
   }
+}
+
+function getReqOpts(secret) {
+  return {
+    method: 'PUT',
+    url: `http://${serverHost}:${port}/file?filename=${
+      testFile
+    }&name=Dr.+Wily&email=wily@smallcatlabs.com`,
+    body: initialContents,
+    headers: {
+      Authorization: `Key ${secret}`
+    }
+  };
 }

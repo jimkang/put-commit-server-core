@@ -5,7 +5,7 @@ var to = require('await-to-js').to;
 var sb = require('standard-bail')();
 var defaults = require('lodash.defaults');
 
-function PutCommitServer({ gitDir }, done) {
+function PutCommitServer({ gitDir, secret }, done) {
   var baseGitOpts = { fs, dir: gitDir };
   var server = restify.createServer({
     name: 'put-commit-server'
@@ -34,6 +34,11 @@ function PutCommitServer({ gitDir }, done) {
   }
 
   function respondUpdateFile(req, res, next) {
+    if (req.headers.authorization !== `Key ${secret}`) {
+      res.send(401);
+      next();
+      return;
+    }
     if (!req.query || !req.query.filename) {
       res.send(400, 'You need to provide a filename in the query string.');
       next();
