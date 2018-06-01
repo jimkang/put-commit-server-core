@@ -7,7 +7,7 @@ var request = require('request');
 
 const testGitDir = __dirname + '/test-git-dir';
 const testFile = 'test-file.json';
-var initialContents = {"key": "value"};
+var initialContents = { key: 'value' };
 const port = 6666;
 
 const serverHost = process.env.SERVER || 'localhost';
@@ -16,9 +16,12 @@ const testSecret = 'secret';
 
 var server;
 
-// WARNING: Must be run via the make file in order to set up
+// WARNING: Must be run via the Makefile in order to set up
 // the test git repo beforehand.
-PutCommitServer({ gitDir: testGitDir, secret: testSecret, disableDirectFileAPI: true }, startServer);
+PutCommitServer(
+  { gitDir: testGitDir, secret: testSecret, disableDirectFileAPI: true },
+  startServer
+);
 
 function startServer(error, theServer) {
   if (error) {
@@ -40,9 +43,16 @@ function runTests(error) {
   test('Close server', closeServer);
 
   function nonJSONTest(t) {
-    request(getReqOpts(testSecret), checkResponse);
+    request(
+      getReqOpts({
+        secret: testSecret,
+        json: false,
+        body: JSON.stringify(initialContents)
+      }),
+      checkResponse
+    );
 
-    function checkResponse(error, res, body) {
+    function checkResponse(error, res) {
       assertNoError(t.ok, error, 'No error while making new file request.');
       t.equal(res.statusCode, 404, 'Correct status code is returned.');
       var fileContents = fs.readFileSync(testGitDir + '/' + testFile, {
@@ -54,7 +64,10 @@ function runTests(error) {
   }
 
   function newJSONTest(t) {
-    request(getReqOpts(testSecret, initialContents), checkResponse);
+    request(
+      getReqOpts({ secret: testSecret, body: initialContents }),
+      checkResponse
+    );
 
     function checkResponse(error, res, body) {
       assertNoError(t.ok, error, 'No error while making new file request.');
@@ -65,14 +78,18 @@ function runTests(error) {
       var fileContents = fs.readFileSync(testGitDir + '/' + testFile, {
         encoding: 'utf8'
       });
-      t.equal(JSON.parse(fileContents), initialContents, 'Committed content is correct.');
+      t.equal(
+        JSON.parse(fileContents),
+        initialContents,
+        'Committed content is correct.'
+      );
       t.end();
     }
   }
-  
+
   function updateJSONTest(t) {
     var updateObj = { key: 'update' };
-    request(getReqOpts(testSecret, updateObj), checkResponse);
+    request(getReqOpts({ secret: testSecret, body: updateObj }), checkResponse);
 
     function checkResponse(error, res, body) {
       assertNoError(t.ok, error, 'No error while making new file request.');
@@ -83,24 +100,28 @@ function runTests(error) {
       var fileContents = fs.readFileSync(testGitDir + '/' + testFile, {
         encoding: 'utf8'
       });
-      t.equal(JSON.parse(fileContents), updateObj, 'Committed content is correct.');
+      t.equal(
+        JSON.parse(fileContents),
+        updateObj,
+        'Committed content is correct.'
+      );
       t.end();
     }
   }
- 
+
   function closeServer(t) {
     server.close(t.end);
   }
 }
 
-function getReqOpts(secret, objectToPut) {
+function getReqOpts({ secret, body, json = true }) {
   return {
     method: 'PUT',
     url: `http://${serverHost}:${port}/file?filename=${
       testFile
     }&name=Dr.+Wily&email=wily@smallcatlabs.com`,
-    body: objectToPut || initialContents,
-    json: typeof objectToPut === 'object',
+    body,
+    json,
     headers: {
       Authorization: `Key ${secret}`
     }
