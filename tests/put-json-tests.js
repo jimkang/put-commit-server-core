@@ -19,7 +19,7 @@ var server;
 // WARNING: Must be run via the Makefile in order to set up
 // the test git repo beforehand.
 PutCommitServer(
-  { gitDir: testGitDir, secret: testSecret, disableDirectFileAPI: true },
+  { gitDir: testGitDir, secret: testSecret, enableDirectFileAPI: false },
   startServer
 );
 
@@ -40,12 +40,14 @@ function runTests(error) {
   test('Try to put new non-JSON file', nonJSONTest);
   test('Put new JSON file', newJSONTest);
   test('Update JSON file', updateJSONTest);
+  test('Put bad JSON file', badJSONTest);
   test('Close server', closeServer);
 
   function nonJSONTest(t) {
     request(
       getReqOpts({
         secret: testSecret,
+        path: 'file',
         json: false,
         body: JSON.stringify(initialContents)
       }),
@@ -54,11 +56,14 @@ function runTests(error) {
 
     function checkResponse(error, res) {
       assertNoError(t.ok, error, 'No error while making new file request.');
-      t.equal(res.statusCode, 404, 'Correct status code is returned.');
-      var fileContents = fs.readFileSync(testGitDir + '/' + testFile, {
+      t.equal(res.statusCode, 405, 'Correct status code is returned.');
+      fs.readFile(testGitDir + '/' + testFile, {
         encoding: 'utf8'
-      });
-      t.equal(fileContents, '', 'No file is created.');
+      }, checkFileRead);
+    }
+
+    function checkFileRead(error) {
+      t.ok(error, 'No file is created.');
       t.end();
     }
   }
@@ -78,7 +83,7 @@ function runTests(error) {
       var fileContents = fs.readFileSync(testGitDir + '/' + testFile, {
         encoding: 'utf8'
       });
-      t.equal(
+      t.deepEqual(
         JSON.parse(fileContents),
         initialContents,
         'Committed content is correct.'
@@ -100,11 +105,31 @@ function runTests(error) {
       var fileContents = fs.readFileSync(testGitDir + '/' + testFile, {
         encoding: 'utf8'
       });
-      t.equal(
+      t.deepEqual(
         JSON.parse(fileContents),
         updateObj,
         'Committed content is correct.'
       );
+      t.end();
+    }
+  }
+
+  function badJSONTest(t) {
+    request(getReqOpts({ secret: testSecret, body: '{bad: "JSON"}', json: false, filename: 'bad.json'}), checkResponse);
+
+    function checkResponse(error, res, body) {
+      assertNoError(t.ok, error, 'No error while making new file request.');
+      t.equal(res.statusCode, 422, 'Correct status code is returned.');
+      if (res.statusCode !== 422) {
+        console.log('body:', body);
+      }
+      fs.readFile(testGitDir + '/bad.json', {
+        encoding: 'utf8'
+      }, checkFileRead);
+    }
+
+    function checkFileRead(error) {
+      t.ok(error, 'No file is created.');
       t.end();
     }
   }
@@ -114,11 +139,11 @@ function runTests(error) {
   }
 }
 
-function getReqOpts({ secret, body, json = true }) {
+function getReqOpts({ secret, path = 'json', body, json = true, filename = testFile }) {
   return {
     method: 'PUT',
-    url: `http://${serverHost}:${port}/file?filename=${
-      testFile
+    url: `http://${serverHost}:${port}/${path}?filename=${
+      filename
     }&name=Dr.+Wily&email=wily@smallcatlabs.com`,
     body,
     json,

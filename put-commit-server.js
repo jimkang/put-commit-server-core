@@ -4,8 +4,10 @@ var fs = require('fs');
 var to = require('await-to-js').to;
 var sb = require('standard-bail')();
 var defaults = require('lodash.defaults');
+var ParseJSON = require('./parse_json');
+var callNextTick = require('call-next-tick');
 
-function PutCommitServer({ gitDir, secret }, done) {
+function PutCommitServer({ gitDir, secret, enableDirectFileAPI = false }, done) {
   var baseGitOpts = { fs, dir: gitDir };
   var server = restify.createServer({
     name: 'put-commit-server'
@@ -15,7 +17,10 @@ function PutCommitServer({ gitDir, secret }, done) {
   server.use(restify.queryParser());
 
   server.get('/health', respondOK);
-  server.put('/file', respondUpdateFile);
+  if (enableDirectFileAPI) {
+    server.put('/file', respondUpdateFile);
+  }
+  server.put('/json', responseUpdateJSON);
   server.head(/.*/, respondHead);
 
   git
@@ -33,7 +38,11 @@ function PutCommitServer({ gitDir, secret }, done) {
     next();
   }
 
-  function respondUpdateFile(req, res, next) {
+  function responseUpdateJSON(req, res, next) {
+    respondUpdateFile(req, res, next, true);
+  }
+
+  function respondUpdateFile(req, res, next, validateJSON = false) {
     if (req.headers.authorization !== `Key ${secret}`) {
       res.send(401);
       next();
@@ -67,27 +76,41 @@ function PutCommitServer({ gitDir, secret }, done) {
     }
 
     var body = '';
-    req.on('end', writeFile);
+    req.on('end', checkFile);
     req.on('data', collectBodyData);
 
     function collectBodyData(data) {
       body += data;
     }
 
-    function writeFile() {
+    function checkFile() {
       if (!body) {
         res.send(400, 'You need to provide file content in the body.');
         next();
         return;
       }
 
-      // TODO: Use mime type header?
-      fs.writeFile(
-        `${gitDir}/${req.query.filename}`,
-        body,
-        { encoding: 'utf8' },
-        sb(addToGit, next)
-      );
+      if (validateJSON) {
+        ParseJSON(writeFile)(body);
+      } else {
+        callNextTick(writeFile);
+      }
+        
+      function writeFile(error) {
+        if (error) {
+          res.send(422, error.message);
+          next();
+          return;
+        }
+
+        // TODO: Use mime type header?
+        fs.writeFile(
+          `${gitDir}/${req.query.filename}`,
+          body,
+          { encoding: 'utf8' },
+          sb(addToGit, next)
+        );
+      }
     }
 
     async function addToGit() {
