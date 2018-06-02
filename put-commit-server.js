@@ -7,7 +7,10 @@ var defaults = require('lodash.defaults');
 var ParseJSON = require('./parse_json');
 var callNextTick = require('call-next-tick');
 
-function PutCommitServer({ gitDir, secret, enableDirectFileAPI = false }, done) {
+function PutCommitServer(
+  { gitDir, secret, enableDirectFileAPI = false },
+  done
+) {
   var baseGitOpts = { fs, dir: gitDir };
   var server = restify.createServer({
     name: 'put-commit-server'
@@ -95,7 +98,7 @@ function PutCommitServer({ gitDir, secret, enableDirectFileAPI = false }, done) 
       } else {
         callNextTick(writeFile);
       }
-        
+
       function writeFile(error) {
         if (error) {
           res.send(422, error.message);

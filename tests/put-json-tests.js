@@ -57,9 +57,13 @@ function runTests(error) {
     function checkResponse(error, res) {
       assertNoError(t.ok, error, 'No error while making new file request.');
       t.equal(res.statusCode, 405, 'Correct status code is returned.');
-      fs.readFile(testGitDir + '/' + testFile, {
-        encoding: 'utf8'
-      }, checkFileRead);
+      fs.readFile(
+        testGitDir + '/' + testFile,
+        {
+          encoding: 'utf8'
+        },
+        checkFileRead
+      );
     }
 
     function checkFileRead(error) {
@@ -115,7 +119,15 @@ function runTests(error) {
   }
 
   function badJSONTest(t) {
-    request(getReqOpts({ secret: testSecret, body: '{bad: "JSON"}', json: false, filename: 'bad.json'}), checkResponse);
+    request(
+      getReqOpts({
+        secret: testSecret,
+        body: '{bad: "JSON"}',
+        json: false,
+        filename: 'bad.json'
+      }),
+      checkResponse
+    );
 
     function checkResponse(error, res, body) {
       assertNoError(t.ok, error, 'No error while making new file request.');
@@ -123,9 +135,13 @@ function runTests(error) {
       if (res.statusCode !== 422) {
         console.log('body:', body);
       }
-      fs.readFile(testGitDir + '/bad.json', {
-        encoding: 'utf8'
-      }, checkFileRead);
+      fs.readFile(
+        testGitDir + '/bad.json',
+        {
+          encoding: 'utf8'
+        },
+        checkFileRead
+      );
     }
 
     function checkFileRead(error) {
@@ -139,7 +155,13 @@ function runTests(error) {
   }
 }
 
-function getReqOpts({ secret, path = 'json', body, json = true, filename = testFile }) {
+function getReqOpts({
+  secret,
+  path = 'json',
+  body,
+  json = true,
+  filename = testFile
+}) {
   return {
     method: 'PUT',
     url: `http://${serverHost}:${port}/${path}?filename=${

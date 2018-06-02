@@ -18,7 +18,10 @@ var server;
 
 // WARNING: Must be run via the make file in order to set up
 // the test git repo beforehand.
-PutCommitServer({ gitDir: testGitDir, secret: testSecret, enableDirectFileAPI: true }, startServer);
+PutCommitServer(
+  { gitDir: testGitDir, secret: testSecret, enableDirectFileAPI: true },
+  startServer
+);
 
 function startServer(error, theServer) {
   if (error) {
