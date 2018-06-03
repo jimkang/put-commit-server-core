@@ -4,12 +4,15 @@
 
 var PutCommitServer = require('./put-commit-server');
 var logFormat = require('log-format');
+var config = require('./config');
+
 const port = 6666;
 
 PutCommitServer(
   {
     gitDir:
-      process.env.GITDIR || '/usr/share/nginx/html/smidgeo.com/story-beat-data'
+      process.env.GITDIR || '/usr/share/nginx/html/smidgeo.com/story-beat-data',
+    secret: config.secret
   },
   useServer
 );

@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "Simple service that takes file contents via http, writes it to a file, then commits it to a git repo.",
   "main": "put-commit-server.js",
+  "private": true,
   "scripts": {
     "test": "make test"
   },
