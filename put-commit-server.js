@@ -138,7 +138,7 @@ function PutCommitServer(
         next(error);
         return;
       }
-      res.send(200, 'OK!');
+      res.json(200, { message: 'OK!' });
       next();
     }
   }
