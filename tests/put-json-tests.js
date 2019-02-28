@@ -2,7 +2,7 @@
 var test = require('tape');
 var assertNoError = require('assert-no-error');
 var fs = require('fs');
-var PutCommitServer = require('../put-commit-server');
+var PutCommitServerCore = require('../put-commit-server-core');
 var request = require('request');
 
 const testGitDir = __dirname + '/test-git-dir';
@@ -18,7 +18,7 @@ var server;
 
 // WARNING: Must be run via the Makefile in order to set up
 // the test git repo beforehand.
-PutCommitServer(
+PutCommitServerCore(
   { gitDir: testGitDir, secret: testSecret, enableDirectFileAPI: false },
   startServer
 );
@@ -164,9 +164,7 @@ function getReqOpts({
 }) {
   return {
     method: 'PUT',
-    url: `http://${serverHost}:${port}/${path}?filename=${
-      filename
-    }&name=Dr.+Wily&email=wily@smallcatlabs.com`,
+    url: `http://${serverHost}:${port}/${path}?filename=${filename}&name=Dr.+Wily&email=wily@smallcatlabs.com`,
     body,
     json,
     headers: {

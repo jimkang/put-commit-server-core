@@ -7,7 +7,7 @@ var defaults = require('lodash.defaults');
 var ParseJSON = require('./parse_json');
 var callNextTick = require('call-next-tick');
 
-function PutCommitServer(
+function PutCommitServerCore(
   { gitDir, secret, enableDirectFileAPI = false },
   done
 ) {
@@ -152,4 +152,4 @@ function PutCommitServer(
   }
 }
 
-module.exports = PutCommitServer;
+module.exports = PutCommitServerCore;

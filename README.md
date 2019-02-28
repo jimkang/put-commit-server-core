@@ -1,25 +1,32 @@
-put-commit-server
+put-commit-server-core
 ==================
 
-Simple service that takes file contents via http, writes it to a file, then commits it to a git repo.
+The core of [put-commit-server](https://github.com/jimkang/put-commit-server).
 
 Installation
 ------------
 
-Clone this repo.
+    npm install --save put-commit-server-core
 
 Usage
 -----
 
-    node start-put-commit-server.js
+    PutCommitServerCore(
+      { gitDir: testGitDir, secret: testSecret, enableDirectFileAPI: true },
+      startServer
+    );
 
-Deploy:
+    function startServer(error, theServer) {
+      if (error) {
+        console.log('Error creating server:', error);
+        process.exit();
+      }
+      server = theServer;
+      server.listen(port, runTests);
+      // Now you have a REST server running.
+    }
 
-    make initial-setup
-
-Subsequent deploys:
-
-    make pushall
+Check out [put-commit-server](https://github.com/jimkang/put-commit-server) for more about what the point of all this is.
 
 License
 -------
